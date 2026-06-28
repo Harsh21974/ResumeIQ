@@ -230,7 +230,7 @@ function loadSaved() {
 }
 
 function useSaveState(data, design, sections, visible) {
-  const [saveStatus, setSaveStatus] = useState("saved"); // "saved" | "saving" | "unsaved"
+  const [saveStatus, setSaveStatus] = useState("saved");
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -314,7 +314,6 @@ const AtlanticTemplate = ({ data, design, sections, visible }) => {
 
   const vis = (s) => visible.includes(s);
 
-  // Derive sidebar / main split in the user's chosen section order
   const SIDEBAR_SET = new Set(["summary", "skills", "certifications", "languages"]);
   const MAIN_SET    = new Set(["experience", "education", "projects", "volunteering"]);
   const sidebarSections = sections.filter(s => vis(s) && SIDEBAR_SET.has(s));
@@ -324,7 +323,6 @@ const AtlanticTemplate = ({ data, design, sections, visible }) => {
     <div id="resume-canvas" style={{
       width: A4_W, background: "#fff", fontFamily: font, fontSize: fs, lineHeight: lh,
     }}>
-      {/* Header */}
       <div style={{ background: accent, padding: `${pad * 0.9}px ${pad}px`, display: "flex", alignItems: "center", gap: 16 }}>
         {design.showPhoto && personal.photo && (
           <img src={personal.photo} alt="" style={{ width: 68, height: 68, borderRadius: "50%", objectFit: "cover", border: "3px solid rgba(255,255,255,0.4)", flexShrink: 0 }} />
@@ -343,9 +341,7 @@ const AtlanticTemplate = ({ data, design, sections, visible }) => {
         </div>
       </div>
 
-      {/* Body */}
       <div style={{ display: "flex", flex: 1, padding: `${pad * 0.85}px ${pad}px`, gap: pad * 0.9 }}>
-        {/* Sidebar */}
         <div style={{ width: "34%", flexShrink: 0, display: "flex", flexDirection: "column", gap: ss }}>
           {sidebarSections.map(s => (
             <div key={s}>
@@ -395,7 +391,6 @@ const AtlanticTemplate = ({ data, design, sections, visible }) => {
           ))}
         </div>
 
-        {/* Main */}
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: ss }}>
           {mainSections.map(s => (
             <div key={s}>
@@ -1265,330 +1260,334 @@ const Btn = ({ children, onClick, danger, disabled, small, primary, style: ex })
 /* ═══════════════════════════════════════════════════════════════
    SECTION EDITORS — defined before Builder uses them
    ═══════════════════════════════════════════════════════════════ */
+          /* ═══════════════════════════════════════════════════════════════
+        SECTION EDITORS — defined before Builder uses them
+        ═══════════════════════════════════════════════════════════════ */
 
-const PersonalEditor = ({ data, onChange }) => {
-  const set = (f, v) => onChange({ ...data, [f]: v });
-  return (
-    <div>
-      {data.photo && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <img src={data.photo} alt="" style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover", border: "2px solid #e5e7eb" }} />
-          <Btn small danger onClick={() => set("photo", null)}><X size={12} /> Remove photo</Btn>
-        </div>
-      )}
-      <label style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, cursor: "pointer", marginBottom: 16, fontWeight: 500, color: "#374151" }}>
-        <Upload size={14} /> Upload photo
-        <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
-          const f = e.target.files[0];
-          if (f) { const r = new FileReader(); r.onloadend = () => set("photo", r.result); r.readAsDataURL(f); }
-        }} />
-      </label>
-      <Input label="Full name"  value={data.name}     onChange={e => set("name", e.target.value)}     placeholder="Jane Smith" />
-      <Input label="Job title"  value={data.title}    onChange={e => set("title", e.target.value)}    placeholder="Senior Product Designer" />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <Input label="Email" value={data.email} onChange={e => set("email", e.target.value)} placeholder="jane@email.com" />
-        <Input label="Phone" value={data.phone} onChange={e => set("phone", e.target.value)} placeholder="+1 555 000 0000" />
-      </div>
-      <Input label="Location" value={data.location} onChange={e => set("location", e.target.value)} placeholder="New York, NY" />
-      <Input label="LinkedIn"  value={data.linkedin} onChange={e => set("linkedin", e.target.value)} placeholder="linkedin.com/in/username" />
-      <Input label="GitHub"    value={data.github}   onChange={e => set("github", e.target.value)}   placeholder="github.com/username" />
-      <Input label="Website"   value={data.website}  onChange={e => set("website", e.target.value)}  placeholder="yoursite.com" />
-    </div>
-  );
-};
-
-const SummaryEditor = ({ data, onChange }) => (
-  <div>
-    <Textarea label="Summary" value={data} onChange={e => onChange(e.target.value)} rows={6} style={{ minHeight: 110 }} placeholder="Write a 2–4 sentence summary highlighting your experience, key achievements, and what makes you stand out." />
-    <div style={{ fontSize: 11, color: "#9ca3af" }}>{data.length} characters · Aim for 200–400</div>
-  </div>
-);
-
-const ExperienceEditor = ({ data, onChange }) => {
-  const update = (i, f, v) => { const n = [...data]; n[i] = { ...n[i], [f]: v }; onChange(n); };
-  const updateBullet = (i, bi, v) => {
-    const n = [...data]; const b = [...n[i].bullets]; b[bi] = v; n[i] = { ...n[i], bullets: b }; onChange(n);
-  };
-  const addBullet   = (i) => { const n = [...data]; n[i] = { ...n[i], bullets: [...n[i].bullets, ""] }; onChange(n); };
-  const removeBullet = (i, bi) => { const n = [...data]; n[i] = { ...n[i], bullets: n[i].bullets.filter((_, j) => j !== bi) }; onChange(n); };
-  const move    = (i, d) => { const n = [...data]; [n[i], n[i+d]] = [n[i+d], n[i]]; onChange(n); };
-  const remove  = (i) => onChange(data.filter((_, j) => j !== i));
-  const add     = () => onChange([...data, { id: uid(), role: "", company: "", location: "", startMonth: "", startYear: "", endMonth: "", endYear: "", current: false, bullets: [""] }]);
-
-  return (
-    <div>
-      {data.map((exp, i) => (
-        <div key={exp.id} style={{ marginBottom: 12, border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
-          <div style={{ padding: "8px 12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{exp.role || "New position"}</span>
-            <div style={{ display: "flex", gap: 3 }}>
-              <Btn small onClick={() => move(i, -1)} disabled={i === 0}><ChevronUp size={12} /></Btn>
-              <Btn small onClick={() => move(i,  1)} disabled={i === data.length - 1}><ChevronDown size={12} /></Btn>
-              <Btn small danger onClick={() => remove(i)}><Trash2 size={12} /></Btn>
-            </div>
-          </div>
-          <div style={{ padding: 12 }}>
+      const PersonalEditor = ({ data, onChange }) => {
+        const set = (f, v) => onChange({ ...data, [f]: v });
+        return (
+          <div>
+            {data.photo && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <img src={data.photo} alt="" style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover", border: "2px solid #e5e7eb" }} />
+                <Btn small danger onClick={() => set("photo", null)}><X size={12} /> Remove photo</Btn>
+              </div>
+            )}
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 12, cursor: "pointer", marginBottom: 16, fontWeight: 500, color: "#374151" }}>
+              <Upload size={14} /> Upload photo
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                const f = e.target.files[0];
+                if (f) { const r = new FileReader(); r.onloadend = () => set("photo", r.result); r.readAsDataURL(f); }
+              }} />
+            </label>
+            <Input label="Full name"  value={data.name}     onChange={e => set("name", e.target.value)}     placeholder="Jane Smith" />
+            <Input label="Job title"  value={data.title}    onChange={e => set("title", e.target.value)}    placeholder="Senior Product Designer" />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <Input label="Job title" value={exp.role}    onChange={e => update(i, "role", e.target.value)}    placeholder="Software Engineer" />
-              <Input label="Company"   value={exp.company} onChange={e => update(i, "company", e.target.value)} placeholder="Company name" />
+              <Input label="Email" value={data.email} onChange={e => set("email", e.target.value)} placeholder="jane@email.com" />
+              <Input label="Phone" value={data.phone} onChange={e => set("phone", e.target.value)} placeholder="+1 555 000 0000" />
             </div>
-            <Input label="Location" value={exp.location} onChange={e => update(i, "location", e.target.value)} placeholder="City, Country" />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
-              <div>
-                <Label>Start date</Label>
-                <DatePicker month={exp.startMonth} year={exp.startYear} onChange={(m, y) => { update(i, "startMonth", m); update(i, "startYear", y); }} />
-              </div>
-              <div>
-                <Label>End date</Label>
-                {exp.current
-                  ? <div style={{ padding: "7px 10px", background: "#f9fafb", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 12, color: "#9ca3af" }}>Present</div>
-                  : <DatePicker month={exp.endMonth} year={exp.endYear} onChange={(m, y) => { update(i, "endMonth", m); update(i, "endYear", y); }} />
-                }
-                <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#6b7280", cursor: "pointer", marginTop: 4 }}>
-                  <input type="checkbox" checked={exp.current} onChange={e => update(i, "current", e.target.checked)} style={{ width: 12, height: 12 }} />
-                  Currently working here
-                </label>
-              </div>
-            </div>
-            <Label>Bullet points</Label>
-            {exp.bullets.map((b, bi) => (
-              <div key={bi} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "flex-start" }}>
-                <span style={{ color: "#9ca3af", paddingTop: 9, fontSize: 12, flexShrink: 0 }}>•</span>
-                <textarea value={b} onChange={e => updateBullet(i, bi, e.target.value)} placeholder="Describe an achievement with metrics…" rows={2}
-                  style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 12, resize: "vertical", outline: "none", fontFamily: "inherit", color: "#111", lineHeight: 1.5 }} />
-                <button onClick={() => removeBullet(i, bi)} style={{ marginTop: 7, background: "none", border: "none", cursor: "pointer", color: "#d1d5db", padding: 2 }}><X size={14} /></button>
+            <Input label="Location" value={data.location} onChange={e => set("location", e.target.value)} placeholder="New York, NY" />
+            <Input label="LinkedIn"  value={data.linkedin} onChange={e => set("linkedin", e.target.value)} placeholder="linkedin.com/in/username" />
+            <Input label="GitHub"    value={data.github}   onChange={e => set("github", e.target.value)}   placeholder="github.com/username" />
+            <Input label="Website"   value={data.website}  onChange={e => set("website", e.target.value)}  placeholder="yoursite.com" />
+          </div>
+        );
+      };
+
+      const SummaryEditor = ({ data, onChange }) => (
+        <div>
+          <Textarea label="Summary" value={data} onChange={e => onChange(e.target.value)} rows={6} style={{ minHeight: 110 }} placeholder="Write a 2–4 sentence summary highlighting your experience, key achievements, and what makes you stand out." />
+          <div style={{ fontSize: 11, color: "#9ca3af" }}>{data.length} characters · Aim for 200–400</div>
+        </div>
+      );
+
+      const ExperienceEditor = ({ data, onChange }) => {
+        const update = (i, f, v) => { const n = [...data]; n[i] = { ...n[i], [f]: v }; onChange(n); };
+        const updateBullet = (i, bi, v) => {
+          const n = [...data]; const b = [...n[i].bullets]; b[bi] = v; n[i] = { ...n[i], bullets: b }; onChange(n);
+        };
+        const addBullet   = (i) => { const n = [...data]; n[i] = { ...n[i], bullets: [...n[i].bullets, ""] }; onChange(n); };
+        const removeBullet = (i, bi) => { const n = [...data]; n[i] = { ...n[i], bullets: n[i].bullets.filter((_, j) => j !== bi) }; onChange(n); };
+        const move    = (i, d) => { const n = [...data]; [n[i], n[i+d]] = [n[i+d], n[i]]; onChange(n); };
+        const remove  = (i) => onChange(data.filter((_, j) => j !== i));
+        const add     = () => onChange([...data, { id: uid(), role: "", company: "", location: "", startMonth: "", startYear: "", endMonth: "", endYear: "", current: false, bullets: [""] }]);
+
+        return (
+          <div>
+            {data.map((exp, i) => (
+              <div key={exp.id} style={{ marginBottom: 12, border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
+                <div style={{ padding: "8px 12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{exp.role || "New position"}</span>
+                  <div style={{ display: "flex", gap: 3 }}>
+                    <Btn small onClick={() => move(i, -1)} disabled={i === 0}><ChevronUp size={12} /></Btn>
+                    <Btn small onClick={() => move(i,  1)} disabled={i === data.length - 1}><ChevronDown size={12} /></Btn>
+                    <Btn small danger onClick={() => remove(i)}><Trash2 size={12} /></Btn>
+                  </div>
+                </div>
+                <div style={{ padding: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <Input label="Job title" value={exp.role}    onChange={e => update(i, "role", e.target.value)}    placeholder="Software Engineer" />
+                    <Input label="Company"   value={exp.company} onChange={e => update(i, "company", e.target.value)} placeholder="Company name" />
+                  </div>
+                  <Input label="Location" value={exp.location} onChange={e => update(i, "location", e.target.value)} placeholder="City, Country" />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                    <div>
+                      <Label>Start date</Label>
+                      <DatePicker month={exp.startMonth} year={exp.startYear} onChange={(m, y) => { update(i, "startMonth", m); update(i, "startYear", y); }} />
+                    </div>
+                    <div>
+                      <Label>End date</Label>
+                      {exp.current
+                        ? <div style={{ padding: "7px 10px", background: "#f9fafb", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 12, color: "#9ca3af" }}>Present</div>
+                        : <DatePicker month={exp.endMonth} year={exp.endYear} onChange={(m, y) => { update(i, "endMonth", m); update(i, "endYear", y); }} />
+                      }
+                      <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#6b7280", cursor: "pointer", marginTop: 4 }}>
+                        <input type="checkbox" checked={exp.current} onChange={e => update(i, "current", e.target.checked)} style={{ width: 12, height: 12 }} />
+                        Currently working here
+                      </label>
+                    </div>
+                  </div>
+                  <Label>Bullet points</Label>
+                  {exp.bullets.map((b, bi) => (
+                    <div key={bi} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "flex-start" }}>
+                      <span style={{ color: "#9ca3af", paddingTop: 9, fontSize: 12, flexShrink: 0 }}>•</span>
+                      <textarea value={b} onChange={e => updateBullet(i, bi, e.target.value)} placeholder="Describe an achievement with metrics…" rows={2}
+                        style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 12, resize: "vertical", outline: "none", fontFamily: "inherit", color: "#111", lineHeight: 1.5 }} />
+                      <button onClick={() => removeBullet(i, bi)} style={{ marginTop: 7, background: "none", border: "none", cursor: "pointer", color: "#d1d5db", padding: 2 }}><X size={14} /></button>
+                    </div>
+                  ))}
+                  <Btn small onClick={() => addBullet(i)} style={{ marginTop: 2 }}><Plus size={12} /> Add bullet</Btn>
+                </div>
               </div>
             ))}
-            <Btn small onClick={() => addBullet(i)} style={{ marginTop: 2 }}><Plus size={12} /> Add bullet</Btn>
+            <Btn primary onClick={add} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}><Plus size={16} /> Add position</Btn>
           </div>
-        </div>
-      ))}
-      <Btn primary onClick={add} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}><Plus size={16} /> Add position</Btn>
-    </div>
-  );
-};
+        );
+      };
 
-const EducationEditor = ({ data, onChange }) => {
-  const update = (i, f, v) => { const n = [...data]; n[i] = { ...n[i], [f]: v }; onChange(n); };
-  const remove  = (i) => onChange(data.filter((_, j) => j !== i));
-  const add     = () => onChange([...data, { id: uid(), degree: "", school: "", location: "", startMonth: "", startYear: "", endMonth: "", endYear: "", gpa: "", highlights: "" }]);
+      const EducationEditor = ({ data, onChange }) => {
+        const update = (i, f, v) => { const n = [...data]; n[i] = { ...n[i], [f]: v }; onChange(n); };
+        const remove  = (i) => onChange(data.filter((_, j) => j !== i));
+        const add     = () => onChange([...data, { id: uid(), degree: "", school: "", location: "", startMonth: "", startYear: "", endMonth: "", endYear: "", gpa: "", highlights: "" }]);
 
-  return (
-    <div>
-      {data.map((edu, i) => (
-        <div key={edu.id} style={{ marginBottom: 12, border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
-          <div style={{ padding: "8px 12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{edu.degree || "New degree"}</span>
-            <Btn small danger onClick={() => remove(i)}><Trash2 size={12} /></Btn>
-          </div>
-          <div style={{ padding: 12 }}>
-            <Input label="Degree" value={edu.degree} onChange={e => update(i, "degree", e.target.value)} placeholder="B.S. Computer Science" />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <Input label="School"   value={edu.school}   onChange={e => update(i, "school", e.target.value)}   placeholder="MIT" />
-              <Input label="Location" value={edu.location} onChange={e => update(i, "location", e.target.value)} placeholder="Cambridge, MA" />
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
-              <div><Label>Start date</Label><DatePicker month={edu.startMonth} year={edu.startYear} onChange={(m, y) => { update(i, "startMonth", m); update(i, "startYear", y); }} /></div>
-              <div><Label>End date</Label>  <DatePicker month={edu.endMonth}   year={edu.endYear}   onChange={(m, y) => { update(i, "endMonth",   m); update(i, "endYear",   y); }} /></div>
-            </div>
-            <Input label="GPA" value={edu.gpa} onChange={e => update(i, "gpa", e.target.value)} placeholder="3.9" />
-            <Textarea label="Highlights" value={edu.highlights} onChange={e => update(i, "highlights", e.target.value)} placeholder="Honors, activities, relevant coursework…" style={{ minHeight: 56 }} />
-          </div>
-        </div>
-      ))}
-      <Btn primary onClick={add} style={{ width: "100%", justifyContent: "center" }}><Plus size={16} /> Add education</Btn>
-    </div>
-  );
-};
-
-const ProjectsEditor = ({ data, onChange }) => {
-  const update    = (i, f, v) => { const n = [...data]; n[i] = { ...n[i], [f]: v }; onChange(n); };
-  const updateTech = (i, s) => { const n = [...data]; n[i] = { ...n[i], tech: s.split(",").map(t => t.trim()).filter(Boolean) }; onChange(n); };
-  const remove    = (i) => onChange(data.filter((_, j) => j !== i));
-  const add       = () => onChange([...data, { id: uid(), title: "", subtitle: "", description: "", tech: [] }]);
-
-  return (
-    <div>
-      {data.map((proj, i) => (
-        <div key={proj.id} style={{ marginBottom: 12, border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
-          <div style={{ padding: "8px 12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{proj.title || "New project"}</span>
-            <Btn small danger onClick={() => remove(i)}><Trash2 size={12} /></Btn>
-          </div>
-          <div style={{ padding: 12 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <Input label="Project name"   value={proj.title}    onChange={e => update(i, "title", e.target.value)}    placeholder="Project name" />
-              <Input label="Subtitle / link" value={proj.subtitle} onChange={e => update(i, "subtitle", e.target.value)} placeholder="github.com/..." />
-            </div>
-            <Textarea label="Description" value={proj.description} onChange={e => update(i, "description", e.target.value)} placeholder="What it does, your role, impact, scale…" style={{ minHeight: 72 }} />
-            <Input label="Tech stack (comma-separated)" value={proj.tech?.join(", ") || ""} onChange={e => updateTech(i, e.target.value)} placeholder="React, TypeScript, AWS" />
-          </div>
-        </div>
-      ))}
-      <Btn primary onClick={add} style={{ width: "100%", justifyContent: "center" }}><Plus size={16} /> Add project</Btn>
-    </div>
-  );
-};
-
-const SkillsEditor = ({ data, onChange }) => {
-  const [newItem, setNewItem] = useState({});
-  const [newCat,  setNewCat]  = useState("");
-
-  const updateCat  = (i, v) => { const n = [...data]; n[i] = { ...n[i], category: v }; onChange(n); };
-  const addItem    = (i) => {
-    const val = (newItem[i] || "").trim(); if (!val) return;
-    const n = [...data]; n[i] = { ...n[i], items: [...n[i].items, { id: uid(), val }] }; onChange(n);
-    setNewItem(prev => ({ ...prev, [i]: "" }));
-  };
-  const removeItem = (i, itemId) => {
-    const n = [...data]; n[i] = { ...n[i], items: n[i].items.filter(x => x.id !== itemId) }; onChange(n);
-  };
-  const removeGroup = (i) => onChange(data.filter((_, j) => j !== i));
-  const addGroup    = () => {
-    if (!newCat.trim()) return;
-    onChange([...data, { id: uid(), category: newCat.trim(), items: [] }]);
-    setNewCat("");
-  };
-
-  return (
-    <div>
-      {data.map((group, i) => (
-        <div key={group.id} style={{ marginBottom: 12, border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
-          <div style={{ padding: "8px 12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <input value={group.category} onChange={e => updateCat(i, e.target.value)} style={{ fontWeight: 600, fontSize: 12, color: "#374151", background: "none", border: "none", outline: "none", flex: 1 }} />
-            <Btn small danger onClick={() => removeGroup(i)}><Trash2 size={12} /></Btn>
-          </div>
-          <div style={{ padding: 10 }}>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }}>
-              {group.items.map(item => (
-                <span key={item.id} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 8px", background: "#f3f4f6", borderRadius: 4, fontSize: 12, color: "#374151" }}>
-                  {item.val}
-                  <button onClick={() => removeItem(i, item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0, display: "flex" }}><X size={11} /></button>
-                </span>
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              <input value={newItem[i] || ""} onChange={e => setNewItem(p => ({ ...p, [i]: e.target.value }))} onKeyDown={e => e.key === "Enter" && addItem(i)} placeholder="Add skill, press Enter…"
-                style={{ flex: 1, padding: "5px 8px", borderRadius: 5, border: "1px solid #e5e7eb", fontSize: 12, outline: "none" }} />
-              <Btn small onClick={() => addItem(i)}><Plus size={12} /></Btn>
-            </div>
-          </div>
-        </div>
-      ))}
-      <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
-        <input value={newCat} onChange={e => setNewCat(e.target.value)} onKeyDown={e => e.key === "Enter" && addGroup()} placeholder="New category name…"
-          style={{ flex: 1, padding: "7px 10px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, outline: "none" }} />
-        <Btn primary onClick={addGroup}>Add</Btn>
-      </div>
-    </div>
-  );
-};
-
-const CertificationsEditor = ({ data, onChange }) => {
-  const update = (i, f, v) => { const n = [...data]; n[i] = { ...n[i], [f]: v }; onChange(n); };
-  const remove = (i) => onChange(data.filter((_, j) => j !== i));
-  const add    = () => onChange([...data, { id: uid(), name: "", issuer: "", month: "", year: "", expMonth: "", expYear: "", noExpiry: false }]);
-
-  return (
-    <div>
-      {data.map((c, i) => (
-        <div key={c.id} style={{ marginBottom: 12, border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
-          <div style={{ padding: "8px 12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{c.name || "New certification"}</span>
-            <Btn small danger onClick={() => remove(i)}><Trash2 size={12} /></Btn>
-          </div>
-          <div style={{ padding: 12 }}>
-            <Input label="Certification name" value={c.name}   onChange={e => update(i, "name", e.target.value)}   placeholder="AWS Solutions Architect" />
-            <Input label="Issuing organization" value={c.issuer} onChange={e => update(i, "issuer", e.target.value)} placeholder="Amazon Web Services" />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
-              <div><Label>Issue date</Label><DatePicker month={c.month} year={c.year} onChange={(m, y) => { update(i, "month", m); update(i, "year", y); }} /></div>
-              <div>
-                <Label>Expiry date</Label>
-                {c.noExpiry
-                  ? <div style={{ padding: "7px 10px", background: "#f9fafb", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 12, color: "#9ca3af" }}>No expiry</div>
-                  : <DatePicker month={c.expMonth} year={c.expYear} onChange={(m, y) => { update(i, "expMonth", m); update(i, "expYear", y); }} />
-                }
-                <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#6b7280", cursor: "pointer", marginTop: 4 }}>
-                  <input type="checkbox" checked={c.noExpiry} onChange={e => update(i, "noExpiry", e.target.checked)} style={{ width: 12, height: 12 }} />
-                  No expiry date
-                </label>
+        return (
+          <div>
+            {data.map((edu, i) => (
+              <div key={edu.id} style={{ marginBottom: 12, border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
+                <div style={{ padding: "8px 12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{edu.degree || "New degree"}</span>
+                  <Btn small danger onClick={() => remove(i)}><Trash2 size={12} /></Btn>
+                </div>
+                <div style={{ padding: 12 }}>
+                  <Input label="Degree" value={edu.degree} onChange={e => update(i, "degree", e.target.value)} placeholder="B.S. Computer Science" />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <Input label="School"   value={edu.school}   onChange={e => update(i, "school", e.target.value)}   placeholder="MIT" />
+                    <Input label="Location" value={edu.location} onChange={e => update(i, "location", e.target.value)} placeholder="Cambridge, MA" />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                    <div><Label>Start date</Label><DatePicker month={edu.startMonth} year={edu.startYear} onChange={(m, y) => { update(i, "startMonth", m); update(i, "startYear", y); }} /></div>
+                    <div><Label>End date</Label>  <DatePicker month={edu.endMonth}   year={edu.endYear}   onChange={(m, y) => { update(i, "endMonth",   m); update(i, "endYear",   y); }} /></div>
+                  </div>
+                  <Input label="GPA" value={edu.gpa} onChange={e => update(i, "gpa", e.target.value)} placeholder="3.9" />
+                  <Textarea label="Highlights" value={edu.highlights} onChange={e => update(i, "highlights", e.target.value)} placeholder="Honors, activities, relevant coursework…" style={{ minHeight: 56 }} />
+                </div>
               </div>
-            </div>
+            ))}
+            <Btn primary onClick={add} style={{ width: "100%", justifyContent: "center" }}><Plus size={16} /> Add education</Btn>
           </div>
-        </div>
-      ))}
-      <Btn primary onClick={add} style={{ width: "100%", justifyContent: "center" }}><Plus size={16} /> Add certification</Btn>
-    </div>
-  );
-};
+        );
+      };
 
-const LanguagesEditor = ({ data, onChange }) => {
-  const update = (i, f, v) => { const n = [...data]; n[i] = { ...n[i], [f]: v }; onChange(n); };
-  const remove = (i) => onChange(data.filter((_, j) => j !== i));
-  const add    = () => onChange([...data, { id: uid(), language: "", proficiency: "Professional" }]);
+      const ProjectsEditor = ({ data, onChange }) => {
+        const update    = (i, f, v) => { const n = [...data]; n[i] = { ...n[i], [f]: v }; onChange(n); };
+        const updateTech = (i, s) => { const n = [...data]; n[i] = { ...n[i], tech: s.split(",").map(t => t.trim()).filter(Boolean) }; onChange(n); };
+        const remove    = (i) => onChange(data.filter((_, j) => j !== i));
+        const add       = () => onChange([...data, { id: uid(), title: "", subtitle: "", description: "", tech: [] }]);
 
-  return (
-    <div>
-      {data.map((l, i) => (
-        <div key={l.id} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}>
-          <input value={l.language} onChange={e => update(i, "language", e.target.value)} placeholder="Language"
-            style={{ flex: 1, padding: "7px 10px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, outline: "none" }} />
-          <select value={l.proficiency} onChange={e => update(i, "proficiency", e.target.value)}
-            style={{ flex: 1, padding: "7px 10px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, outline: "none", background: "#fff", appearance: "none" }}>
-            {PROFICIENCY_LEVELS.map(p => <option key={p} value={p}>{p}</option>)}
-          </select>
-          <button onClick={() => remove(i)} style={{ padding: 6, background: "none", border: "1px solid #fca5a5", borderRadius: 6, cursor: "pointer", color: "#dc2626", display: "flex" }}><Trash2 size={13} /></button>
-        </div>
-      ))}
-      <Btn primary onClick={add} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}><Plus size={16} /> Add language</Btn>
-    </div>
-  );
-};
-
-const VolunteeringEditor = ({ data, onChange }) => {
-  const update = (i, f, v) => { const n = [...data]; n[i] = { ...n[i], [f]: v }; onChange(n); };
-  const remove = (i) => onChange(data.filter((_, j) => j !== i));
-  const add    = () => onChange([...data, { id: uid(), role: "", organization: "", startMonth: "", startYear: "", endMonth: "", endYear: "", current: false, description: "" }]);
-
-  return (
-    <div>
-      {data.map((v, i) => (
-        <div key={v.id} style={{ marginBottom: 12, border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
-          <div style={{ padding: "8px 12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{v.role || "New entry"}</span>
-            <Btn small danger onClick={() => remove(i)}><Trash2 size={12} /></Btn>
-          </div>
-          <div style={{ padding: 12 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <Input label="Role"         value={v.role}         onChange={e => update(i, "role", e.target.value)}         placeholder="Volunteer Tutor" />
-              <Input label="Organization" value={v.organization} onChange={e => update(i, "organization", e.target.value)} placeholder="Organization name" />
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
-              <div><Label>Start date</Label><DatePicker month={v.startMonth} year={v.startYear} onChange={(m, y) => { update(i, "startMonth", m); update(i, "startYear", y); }} /></div>
-              <div>
-                <Label>End date</Label>
-                {v.current
-                  ? <div style={{ padding: "7px 10px", background: "#f9fafb", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 12, color: "#9ca3af" }}>Present</div>
-                  : <DatePicker month={v.endMonth} year={v.endYear} onChange={(m, y) => { update(i, "endMonth", m); update(i, "endYear", y); }} />
-                }
-                <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#6b7280", cursor: "pointer", marginTop: 4 }}>
-                  <input type="checkbox" checked={v.current} onChange={e => update(i, "current", e.target.checked)} style={{ width: 12, height: 12 }} />
-                  Currently volunteering
-                </label>
+        return (
+          <div>
+            {data.map((proj, i) => (
+              <div key={proj.id} style={{ marginBottom: 12, border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
+                <div style={{ padding: "8px 12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{proj.title || "New project"}</span>
+                  <Btn small danger onClick={() => remove(i)}><Trash2 size={12} /></Btn>
+                </div>
+                <div style={{ padding: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <Input label="Project name"   value={proj.title}    onChange={e => update(i, "title", e.target.value)}    placeholder="Project name" />
+                    <Input label="Subtitle / link" value={proj.subtitle} onChange={e => update(i, "subtitle", e.target.value)} placeholder="github.com/..." />
+                  </div>
+                  <Textarea label="Description" value={proj.description} onChange={e => update(i, "description", e.target.value)} placeholder="What it does, your role, impact, scale…" style={{ minHeight: 72 }} />
+                  <Input label="Tech stack (comma-separated)" value={proj.tech?.join(", ") || ""} onChange={e => updateTech(i, e.target.value)} placeholder="React, TypeScript, AWS" />
+                </div>
               </div>
-            </div>
-            <Textarea label="Description" value={v.description} onChange={e => update(i, "description", e.target.value)} placeholder="Describe your role and impact…" style={{ minHeight: 64 }} />
+            ))}
+            <Btn primary onClick={add} style={{ width: "100%", justifyContent: "center" }}><Plus size={16} /> Add project</Btn>
           </div>
-        </div>
-      ))}
-      <Btn primary onClick={add} style={{ width: "100%", justifyContent: "center" }}><Plus size={16} /> Add entry</Btn>
-    </div>
-  );
-};
+        );
+      };
+
+      const SkillsEditor = ({ data, onChange }) => {
+        const [newItem, setNewItem] = useState({});
+        const [newCat,  setNewCat]  = useState("");
+
+        const updateCat  = (i, v) => { const n = [...data]; n[i] = { ...n[i], category: v }; onChange(n); };
+        const addItem    = (i) => {
+          const val = (newItem[i] || "").trim(); if (!val) return;
+          const n = [...data]; n[i] = { ...n[i], items: [...n[i].items, { id: uid(), val }] }; onChange(n);
+          setNewItem(prev => ({ ...prev, [i]: "" }));
+        };
+        const removeItem = (i, itemId) => {
+          const n = [...data]; n[i] = { ...n[i], items: n[i].items.filter(x => x.id !== itemId) }; onChange(n);
+        };
+        const removeGroup = (i) => onChange(data.filter((_, j) => j !== i));
+        const addGroup    = () => {
+          if (!newCat.trim()) return;
+          onChange([...data, { id: uid(), category: newCat.trim(), items: [] }]);
+          setNewCat("");
+        };
+
+        return (
+          <div>
+            {data.map((group, i) => (
+              <div key={group.id} style={{ marginBottom: 12, border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
+                <div style={{ padding: "8px 12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <input value={group.category} onChange={e => updateCat(i, e.target.value)} style={{ fontWeight: 600, fontSize: 12, color: "#374151", background: "none", border: "none", outline: "none", flex: 1 }} />
+                  <Btn small danger onClick={() => removeGroup(i)}><Trash2 size={12} /></Btn>
+                </div>
+                <div style={{ padding: 10 }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }}>
+                    {group.items.map(item => (
+                      <span key={item.id} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 8px", background: "#f3f4f6", borderRadius: 4, fontSize: 12, color: "#374151" }}>
+                        {item.val}
+                        <button onClick={() => removeItem(i, item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0, display: "flex" }}><X size={11} /></button>
+                      </span>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <input value={newItem[i] || ""} onChange={e => setNewItem(p => ({ ...p, [i]: e.target.value }))} onKeyDown={e => e.key === "Enter" && addItem(i)} placeholder="Add skill, press Enter…"
+                      style={{ flex: 1, padding: "5px 8px", borderRadius: 5, border: "1px solid #e5e7eb", fontSize: 12, outline: "none" }} />
+                    <Btn small onClick={() => addItem(i)}><Plus size={12} /></Btn>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+              <input value={newCat} onChange={e => setNewCat(e.target.value)} onKeyDown={e => e.key === "Enter" && addGroup()} placeholder="New category name…"
+                style={{ flex: 1, padding: "7px 10px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, outline: "none" }} />
+              <Btn primary onClick={addGroup}>Add</Btn>
+            </div>
+          </div>
+        );
+      };
+
+      const CertificationsEditor = ({ data, onChange }) => {
+        const update = (i, f, v) => { const n = [...data]; n[i] = { ...n[i], [f]: v }; onChange(n); };
+        const remove = (i) => onChange(data.filter((_, j) => j !== i));
+        const add    = () => onChange([...data, { id: uid(), name: "", issuer: "", month: "", year: "", expMonth: "", expYear: "", noExpiry: false }]);
+
+        return (
+          <div>
+            {data.map((c, i) => (
+              <div key={c.id} style={{ marginBottom: 12, border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
+                <div style={{ padding: "8px 12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{c.name || "New certification"}</span>
+                  <Btn small danger onClick={() => remove(i)}><Trash2 size={12} /></Btn>
+                </div>
+                <div style={{ padding: 12 }}>
+                  <Input label="Certification name" value={c.name}   onChange={e => update(i, "name", e.target.value)}   placeholder="AWS Solutions Architect" />
+                  <Input label="Issuing organization" value={c.issuer} onChange={e => update(i, "issuer", e.target.value)} placeholder="Amazon Web Services" />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
+                    <div><Label>Issue date</Label><DatePicker month={c.month} year={c.year} onChange={(m, y) => { update(i, "month", m); update(i, "year", y); }} /></div>
+                    <div>
+                      <Label>Expiry date</Label>
+                      {c.noExpiry
+                        ? <div style={{ padding: "7px 10px", background: "#f9fafb", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 12, color: "#9ca3af" }}>No expiry</div>
+                        : <DatePicker month={c.expMonth} year={c.expYear} onChange={(m, y) => { update(i, "expMonth", m); update(i, "expYear", y); }} />
+                      }
+                      <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#6b7280", cursor: "pointer", marginTop: 4 }}>
+                        <input type="checkbox" checked={c.noExpiry} onChange={e => update(i, "noExpiry", e.target.checked)} style={{ width: 12, height: 12 }} />
+                        No expiry date
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <Btn primary onClick={add} style={{ width: "100%", justifyContent: "center" }}><Plus size={16} /> Add certification</Btn>
+          </div>
+        );
+      };
+
+      const LanguagesEditor = ({ data, onChange }) => {
+        const update = (i, f, v) => { const n = [...data]; n[i] = { ...n[i], [f]: v }; onChange(n); };
+        const remove = (i) => onChange(data.filter((_, j) => j !== i));
+        const add    = () => onChange([...data, { id: uid(), language: "", proficiency: "Professional" }]);
+
+        return (
+          <div>
+            {data.map((l, i) => (
+              <div key={l.id} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}>
+                <input value={l.language} onChange={e => update(i, "language", e.target.value)} placeholder="Language"
+                  style={{ flex: 1, padding: "7px 10px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, outline: "none" }} />
+                <select value={l.proficiency} onChange={e => update(i, "proficiency", e.target.value)}
+                  style={{ flex: 1, padding: "7px 10px", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 13, outline: "none", background: "#fff", appearance: "none" }}>
+                  {PROFICIENCY_LEVELS.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+                <button onClick={() => remove(i)} style={{ padding: 6, background: "none", border: "1px solid #fca5a5", borderRadius: 6, cursor: "pointer", color: "#dc2626", display: "flex" }}><Trash2 size={13} /></button>
+              </div>
+            ))}
+            <Btn primary onClick={add} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}><Plus size={16} /> Add language</Btn>
+          </div>
+        );
+      };
+
+      const VolunteeringEditor = ({ data, onChange }) => {
+        const update = (i, f, v) => { const n = [...data]; n[i] = { ...n[i], [f]: v }; onChange(n); };
+        const remove = (i) => onChange(data.filter((_, j) => j !== i));
+        const add    = () => onChange([...data, { id: uid(), role: "", organization: "", startMonth: "", startYear: "", endMonth: "", endYear: "", current: false, description: "" }]);
+
+        return (
+          <div>
+            {data.map((v, i) => (
+              <div key={v.id} style={{ marginBottom: 12, border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
+                <div style={{ padding: "8px 12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{v.role || "New entry"}</span>
+                  <Btn small danger onClick={() => remove(i)}><Trash2 size={12} /></Btn>
+                </div>
+                <div style={{ padding: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <Input label="Role"         value={v.role}         onChange={e => update(i, "role", e.target.value)}         placeholder="Volunteer Tutor" />
+                    <Input label="Organization" value={v.organization} onChange={e => update(i, "organization", e.target.value)} placeholder="Organization name" />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                    <div><Label>Start date</Label><DatePicker month={v.startMonth} year={v.startYear} onChange={(m, y) => { update(i, "startMonth", m); update(i, "startYear", y); }} /></div>
+                    <div>
+                      <Label>End date</Label>
+                      {v.current
+                        ? <div style={{ padding: "7px 10px", background: "#f9fafb", borderRadius: 6, border: "1px solid #e5e7eb", fontSize: 12, color: "#9ca3af" }}>Present</div>
+                        : <DatePicker month={v.endMonth} year={v.endYear} onChange={(m, y) => { update(i, "endMonth", m); update(i, "endYear", y); }} />
+                      }
+                      <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#6b7280", cursor: "pointer", marginTop: 4 }}>
+                        <input type="checkbox" checked={v.current} onChange={e => update(i, "current", e.target.checked)} style={{ width: 12, height: 12 }} />
+                        Currently volunteering
+                      </label>
+                    </div>
+                  </div>
+                  <Textarea label="Description" value={v.description} onChange={e => update(i, "description", e.target.value)} placeholder="Describe your role and impact…" style={{ minHeight: 64 }} />
+                </div>
+              </div>
+            ))}
+            <Btn primary onClick={add} style={{ width: "100%", justifyContent: "center" }}><Plus size={16} /> Add entry</Btn>
+          </div>
+        );
+      };
 
 /* ═══════════════════════════════════════════════════════════════
    TEMPLATE THUMBNAIL
    ═══════════════════════════════════════════════════════════════ */
+  
 const TemplateThumbnail = ({ template, selected, accent, onClick }) => {
   const isA = template.id === "atlantic";
   const isM = template.id === "mercury";
@@ -1634,50 +1633,28 @@ const TemplateThumbnail = ({ template, selected, accent, onClick }) => {
 /* ═══════════════════════════════════════════════════════════════
    PDF EXPORT
    ═══════════════════════════════════════════════════════════════ */
-function usePrintExport() {
-  const [isExporting, setIsExporting] = useState(false);
+    function usePrintExport(data, design, sections, visible) {
+      const [isExporting, setIsExporting] = useState(false);
 
-  const triggerPrint = useCallback(async () => {
-    setIsExporting(true);
-
-    const styleId = "__resume_print_style__";
-    let styleEl = document.getElementById(styleId);
-    if (!styleEl) {
-      styleEl = document.createElement("style");
-      styleEl.id = styleId;
-      document.head.appendChild(styleEl);
-    }
-    styleEl.textContent = `
-      @media print {
-        @page { size: A4 portrait; margin: 0; }
-        body > *:not(#resume-print-root) { display: none !important; }
-        #resume-print-root {
-          display: block !important;
-          position: fixed !important;
-          top: 0; left: 0;
-          width: 210mm !important;
-          transform: none !important;
+      const triggerPrint = useCallback(async () => {
+        setIsExporting(true);
+        try {
+          const { exportResumePdf } = await import("./resumePDFExport.js");
+          await exportResumePdf(data, design, sections, visible);
+        } catch (err) {
+          console.error("PDF export failed:", err);
+          alert("PDF export failed. Please try again.");
+        } finally {
+          setIsExporting(false);
         }
-        #resume-print-root * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-      }
-    `;
+      }, [data, design, sections, visible]);
 
-    await new Promise(r => setTimeout(r, 80));
-    window.print();
+      return { triggerPrint, isExporting };
+    }
 
-    const cleanup = () => {
-      setIsExporting(false);
-      window.removeEventListener("focus", cleanup);
-    };
-    window.addEventListener("focus", cleanup);
-    setTimeout(() => { setIsExporting(false); }, 4000);
-  }, []);
-
-  return { triggerPrint, isExporting };
-}
 
 /* ═══════════════════════════════════════════════════════════════
-   MAIN BUILDER
+   MAIN BUILDER with Auto-Fit and Custom Sections
    ═══════════════════════════════════════════════════════════════ */
 const Builder = () => {
   const initialState = useMemo(() => {
@@ -1706,22 +1683,93 @@ const Builder = () => {
   [setState]);
 
   const saveStatus = useSaveState(data, design, sections, visible);
-  const { triggerPrint, isExporting } = usePrintExport();
+  const { triggerPrint, isExporting } = usePrintExport(data, design, sections, visible);
 
   const [panel,         setPanel]         = useState("edit");
   const [activeSection, setActiveSection] = useState("personal");
-  const [zoom,          setZoom]          = useState(1.00);
+  const [zoom,          setZoom]          = useState(1.0);
+  const [autoFit,       setAutoFit]       = useState(true);
   const [mobileView,    setMobileView]    = useState("editor");
   const [isMobile,      setIsMobile]      = useState(window.innerWidth < 768);
   const [dragIdx,       setDragIdx]       = useState(null);
+  const [customSections, setCustomSections] = useState([]);
+  const [showAddSection, setShowAddSection] = useState(false);
+  const [newSectionName, setNewSectionName] = useState("");
+  const [selectedSectionType, setSelectedSectionType] = useState("text");
   const fileRef = useRef(null);
+  const previewContainerRef = useRef(null);
 
+  // ── Auto-fit calculation ──
+  // ── Auto-fit calculation ──
+const calculateFitZoom = useCallback(() => {
+  const container = previewContainerRef.current;
+  if (!container) return 1.0;
+  
+  const containerWidth = container.clientWidth - 40;
+  const containerHeight = container.clientHeight - 40;
+  
+  const fitWidth = containerWidth / A4_W;
+  const fitHeight = containerHeight / A4_H;
+  
+  // Never zoom beyond 100%
+  const fit = Math.min(fitWidth, fitHeight, 1.5);
+  return Math.max(0.5, Math.min(1.0, fit));
+}, []);
+
+
+  // ── Auto-fit on mount only ──
+  // useEffect(() => {
+  //   const fitZoom = calculateFitZoom();
+  //   setZoom(Math.max(0.5, Math.min(1.0, fitZoom)));
+  // }, []); // Only runs once on mount
+
+  // useEffect(() => {
+  //   const handleResize = () => {
+  //     if (autoFit) {
+  //       const fitZoom = calculateFitZoom();
+  //       setZoom(Math.max(0.3, Math.min(1.5, fitZoom)));
+  //     }
+  //   };
+    
+  //   window.addEventListener('resize', handleResize);
+  //   return () => window.removeEventListener('resize', handleResize);
+  // }, [autoFit, calculateFitZoom]);
+
+  // ── Custom Sections ──
+  const addCustomSection = () => {
+    if (!newSectionName.trim()) return;
+    const id = `custom_${uid()}`;
+    const newSection = {
+      id,
+      label: newSectionName.trim(),
+      icon: FileText,
+      type: selectedSectionType,
+    };
+    setCustomSections([...customSections, newSection]);
+    const updatedSections = [...sections, id];
+    setState(s => ({ ...s, sections: updatedSections, visible: [...s.visible, id] }));
+    updateData(id, selectedSectionType === "list" ? [] : "");
+    setNewSectionName("");
+    setShowAddSection(false);
+  };
+
+  const removeCustomSection = (sectionId) => {
+    setCustomSections(customSections.filter(s => s.id !== sectionId));
+    setState(s => ({
+      ...s,
+      sections: s.sections.filter(id => id !== sectionId),
+      visible: s.visible.filter(id => id !== sectionId),
+    }));
+  };
+
+  // ── Responsive ──
   useEffect(() => {
     const fn = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", fn);
     return () => window.removeEventListener("resize", fn);
   }, []);
 
+  // ── Keyboard shortcuts ──
   useEffect(() => {
     const fn = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
@@ -1731,6 +1779,7 @@ const Builder = () => {
     return () => window.removeEventListener("keydown", fn);
   }, [undo, redo]);
 
+  // ── Drag reorder ──
   const handleDragStart = (i) => setDragIdx(i);
   const handleDragOver  = (e, i) => {
     e.preventDefault();
@@ -1748,8 +1797,9 @@ const Builder = () => {
     }));
   };
 
+  // ── JSON save / load ──
   const handleSave = () => {
-    const payload = JSON.stringify({ data, design, sections, visible }, null, 2);
+    const payload = JSON.stringify({ data, design, sections, visible, customSections }, null, 2);
     const a = document.createElement("a");
     a.href = `data:application/json;charset=utf-8,${encodeURIComponent(payload)}`;
     a.download = "resume-data.json";
@@ -1768,6 +1818,9 @@ const Builder = () => {
           sections:parsed.sections|| s.sections,
           visible: parsed.visible || s.visible,
         }));
+        if (parsed.customSections) {
+          setCustomSections(parsed.customSections);
+        }
       } catch { alert("Invalid file."); }
     };
     r.readAsText(f);
@@ -1776,6 +1829,7 @@ const Builder = () => {
   const handleReset = () => {
     if (window.confirm("Reset to default resume data?")) {
       setState({ data: DEFAULT_DATA, design: DEFAULT_DESIGN, sections: DEFAULT_SECTIONS, visible: DEFAULT_VISIBLE });
+      setCustomSections([]);
     }
   };
 
@@ -1793,7 +1847,6 @@ const Builder = () => {
     volunteering:  <VolunteeringEditor   data={data.volunteering}   onChange={v => updateData("volunteering", v)} />,
   };
 
-  const previewContainerRef = useRef(null);
   const scaledWidth  = A4_W * zoom;
   const scaledHeight = A4_H * zoom;
 
@@ -1803,6 +1856,7 @@ const Builder = () => {
     display: "flex", alignItems: "center", justifyContent: "center", opacity: disabled ? 0.5 : 1,
   });
 
+  // ── RENDER ──
   const editorPanel = (
     <div style={{ width: isMobile ? "100%" : 340, flexShrink: 0, background: "#fff", borderRight: "1px solid #e5e7eb", height: "100%", overflow: "hidden", display: (!isMobile || mobileView === "editor") ? "flex" : "none", flexDirection: "column" }}>
       <div style={{ padding: "12px 14px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, gap: 8 }}>
@@ -1838,13 +1892,15 @@ const Builder = () => {
               const def  = SECTION_DEFS[s];
               const Icon = def?.icon || FileText;
               const isVis = visible.includes(s);
+              const isCustom = customSections.some(c => c.id === s);
               return (
                 <div key={s} draggable onDragStart={() => handleDragStart(i)} onDragOver={e => handleDragOver(e, i)} onDragEnd={handleDragEnd}
                   onClick={() => setActiveSection(s)}
-                  title={def?.label}
+                  title={def?.label || s}
                   style={{
                     width: 36, height: 36, margin: "0 4px", borderRadius: 7, cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center",
+                    position: "relative",
                     background: activeSection === s ? design.accent + "18" : "transparent",
                     color: activeSection === s ? design.accent : isVis ? "#9ca3af" : "#d1d5db",
                     border: activeSection === s ? `1px solid ${design.accent}30` : "1px solid transparent",
@@ -1852,13 +1908,70 @@ const Builder = () => {
                     opacity: isVis || s === "personal" ? 1 : 0.45,
                   }}>
                   <Icon size={16} />
+                  {isCustom && (
+                    <span style={{
+                      position: "absolute",
+                      top: -2,
+                      right: -2,
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      background: design.accent,
+                    }} />
+                  )}
+                  {s === "personal" && (
+                    <span style={{
+                      position: "absolute",
+                      top: -2,
+                      right: -2,
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      background: "#16a34a",
+                    }} />
+                  )}
                 </div>
               );
             })}
+            <button
+              onClick={() => setShowAddSection(true)}
+              style={{
+                width: 36,
+                height: 36,
+                margin: "0 4px",
+                borderRadius: 7,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: design.accent + "18",
+                color: design.accent,
+                border: `1px dashed ${design.accent}`,
+                transition: "all 0.12s",
+              }}
+              title="Add custom section"
+            >
+              <Plus size={16} />
+            </button>
           </div>
           <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#111", marginBottom: 14 }}>{SECTION_DEFS[activeSection]?.label}</div>
-            {sectionEditorMap[activeSection]}
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#111", marginBottom: 14 }}>{SECTION_DEFS[activeSection]?.label || activeSection}</div>
+            {sectionEditorMap[activeSection] || (
+              <div>
+                <Textarea
+                  value={data[activeSection] || ""}
+                  onChange={e => updateData(activeSection, e.target.value)}
+                  placeholder="Enter content for this section..."
+                  rows={4}
+                  style={{ minHeight: 100 }}
+                />
+                {customSections.some(c => c.id === activeSection) && (
+                  <Btn small danger onClick={() => removeCustomSection(activeSection)} style={{ marginTop: 8 }}>
+                    <Trash2 size={14} /> Remove Section
+                  </Btn>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1937,12 +2050,16 @@ const Builder = () => {
                 const def  = SECTION_DEFS[s];
                 const Icon = def?.icon || FileText;
                 const isVis = visible.includes(s) || s === "personal";
+                const isCustom = customSections.some(c => c.id === s);
                 return (
                   <div key={s} draggable onDragStart={() => handleDragStart(i)} onDragOver={e => handleDragOver(e, i)} onDragEnd={handleDragEnd}
                     style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#f9fafb", borderRadius: 6, border: "1px solid #e5e7eb", cursor: "grab", fontSize: 12, color: "#374151", opacity: isVis ? 1 : 0.5 }}>
                     <GripVertical size={13} style={{ color: "#d1d5db", flexShrink: 0 }} />
                     <Icon size={13} style={{ color: "#9ca3af", flexShrink: 0 }} />
-                    <span style={{ flex: 1, fontWeight: 500 }}>{def?.label}</span>
+                    <span style={{ flex: 1, fontWeight: 500 }}>{def?.label || s}</span>
+                    {isCustom && (
+                      <span style={{ fontSize: 8, color: design.accent, marginLeft: 4 }}>✨</span>
+                    )}
                     {s !== "personal" && (
                       <button onClick={() => toggleVisible(s)} style={{ background: "none", border: "none", cursor: "pointer", color: isVis ? "#374151" : "#d1d5db", padding: 2, display: "flex" }}>
                         {isVis ? <Eye size={13} /> : <EyeOff size={13} />}
@@ -1971,9 +2088,28 @@ const Builder = () => {
 
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 4, background: "#f3f4f6", borderRadius: 7, padding: "3px 6px" }}>
-            <button onClick={() => setZoom(z => Math.max(0.3, +(z - 0.1).toFixed(1)))} style={iconBtnStyle(zoom <= 0.3)} title="Zoom out"><ZoomOut size={13} /></button>
+            <button onClick={() => { setAutoFit(false); setZoom(z => Math.max(0.3, +(z - 0.1).toFixed(1))); }} style={iconBtnStyle(zoom <= 0.3)} title="Zoom out"><ZoomOut size={13} /></button>
             <span style={{ fontSize: 11, fontWeight: 600, color: "#374151", minWidth: 34, textAlign: "center" }}>{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom(z => Math.min(1.5, +(z + 0.1).toFixed(1)))} style={iconBtnStyle(zoom >= 1.5)} title="Zoom in"><ZoomIn size={13} /></button>
+            <button onClick={() => { setAutoFit(false); setZoom(z => Math.min(1.5, +(z + 0.1).toFixed(1))); }} style={iconBtnStyle(zoom >= 1.5)} title="Zoom in"><ZoomIn size={13} /></button>
+            <button 
+              onClick={() => { 
+                setAutoFit(true); 
+                setZoom(1.0); // Reset to 100% instead of calculating
+              }} 
+              style={{
+                padding: "2px 6px",
+                background: autoFit ? design.accent : "transparent",
+                color: autoFit ? "#fff" : "#6b7280",
+                borderRadius: 4,
+                border: "none",
+                cursor: "pointer",
+                fontSize: 10,
+                fontWeight: 600,
+              }}
+              title="Reset to 100%"
+            >
+              100%
+            </button>
           </div>
 
           <button onClick={triggerPrint} disabled={isExporting} style={{
@@ -1986,41 +2122,51 @@ const Builder = () => {
         </div>
       </div>
 
-      <div ref={previewContainerRef} style={{ flex: 1, overflowY: "auto", overflowX: "auto", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: 28, background: "#e5e7eb" }}>
-        <div style={{ position: "relative", width: scaledWidth, minHeight: scaledHeight, flexShrink: 0 }}>
-          <div
-            id="resume-print-root"
-            style={{
-              position: "absolute", top: 0, left: 0,
-              transformOrigin: "top left",
-              transform: `scale(${zoom})`,
-              boxShadow: "0 4px 40px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.08)",
-              borderRadius: 2,
-            }}
-          >
-            <TemplateComponent data={data} design={design} sections={sections} visible={visible} />
-            {[1, 2].map(page => (
-              <div key={page} style={{
-                position: "absolute", top: A4_H * page, left: 0, right: 0,
-                pointerEvents: "none", zIndex: 10,
-              }} className="page-break-indicator">
-                <div style={{ height: 2, background: "rgba(220,38,38,0.5)" }} />
-                <div style={{
-                  position: "absolute", top: 3, right: 0,
-                  fontSize: 9, color: "rgba(220,38,38,0.8)", background: "rgba(255,255,255,0.9)",
-                  padding: "1px 5px", borderRadius: "3px 0 0 3px", fontFamily: "sans-serif",
-                  fontWeight: 600, letterSpacing: "0.03em",
-                }}>Page {page} end</div>
-              </div>
-            ))}
-          </div>
+      <div ref={previewContainerRef} style={{ flex: 1, overflow: "auto", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: 20, background: "#f0f2f5" }}>
+        <div style={{ 
+          position: "relative", 
+          width: A4_W, 
+          height: A4_H, 
+          flexShrink: 0,
+          transform: `scale(${zoom})`,
+          transformOrigin: "top left",
+          boxShadow: "0 8px 40px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.06)",
+          borderRadius: 3,
+          transition: "transform 0.2s ease",
+        }}>
+          <TemplateComponent data={data} design={design} sections={sections} visible={visible} />
+          {[1].map(page => (
+            <div key={page} style={{
+              position: "absolute", 
+              top: A4_H * page, 
+              left: 0, 
+              right: 0,
+              pointerEvents: "none", 
+              zIndex: 10,
+            }} className="page-break-indicator">
+              <div style={{ height: 2, background: "rgba(220,38,38,0.3)" }} />
+              <div style={{
+                position: "absolute", 
+                top: 3, 
+                right: 0,
+                fontSize: 8, 
+                color: "rgba(220,38,38,0.6)", 
+                background: "rgba(255,255,255,0.9)",
+                padding: "1px 6px", 
+                borderRadius: "3px 0 0 3px", 
+                fontFamily: "sans-serif",
+                fontWeight: 600, 
+                letterSpacing: "0.03em",
+              }}>Page {page + 1}</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", height: "calc(100vh - 64px)", fontFamily: "Inter, system-ui, sans-serif", background: "#f3f4f6", overflow: "hidden", marginTop: "64px" }}>
+    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", height: "calc(100vh - 64px)", fontFamily: "Inter, system-ui, sans-serif", background: "#f0f2f5", overflow: "hidden", marginTop: "64px" }}>
       {isMobile && (
         <div style={{ display: "flex", background: "#fff", borderBottom: "1px solid #e5e7eb", flexShrink: 0 }}>
           {[{ id: "editor", label: "Edit", icon: <AlignLeft size={15} /> }, { id: "preview", label: "Preview", icon: <Monitor size={15} /> }].map(t => (
@@ -2038,6 +2184,65 @@ const Builder = () => {
       )}
       {editorPanel}
       {previewPanel}
+      
+      {/* Add Section Modal */}
+      {showAddSection && (
+        <div style={{
+          position: "fixed",
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: "#fff",
+            padding: 24,
+            borderRadius: 12,
+            maxWidth: 400,
+            width: "90%",
+          }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Add Custom Section</h3>
+            
+            <Input
+              label="Section Name"
+              value={newSectionName}
+              onChange={e => setNewSectionName(e.target.value)}
+              placeholder="e.g., Awards, Publications"
+              style={{ marginBottom: 12 }}
+            />
+            
+            <div style={{ marginBottom: 16 }}>
+              <Label>Section Type</Label>
+              <select
+                value={selectedSectionType}
+                onChange={e => setSelectedSectionType(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "7px 10px",
+                  borderRadius: 6,
+                  border: "1px solid #e5e7eb",
+                  fontSize: 13,
+                  outline: "none",
+                  background: "#fff",
+                }}
+              >
+                <option value="text">Text (Single Paragraph)</option>
+                <option value="list">List (Multiple Items)</option>
+              </select>
+            </div>
+            
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <Btn onClick={() => setShowAddSection(false)}>Cancel</Btn>
+              <Btn primary onClick={addCustomSection} disabled={!newSectionName.trim()}>
+                Add Section
+              </Btn>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto:wght@400;500;700&family=Merriweather:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap');
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -2045,7 +2250,7 @@ const Builder = () => {
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: ${design.accent}; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; borderRadius: 3px; }
         * { box-sizing: border-box; }
         select { appearance: none; -webkit-appearance: none; }
         .page-break-indicator { display: block; }
