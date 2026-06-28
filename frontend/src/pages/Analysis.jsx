@@ -915,253 +915,242 @@ const Analysis = () => {
     }
   };
   // ========== SHARE: Improved Hybrid Approach ==========
-const handleShare = async () => {
-  if (isGenerating) return;
-  
-  try {
-    setIsGenerating(true);
-    toast.info("Creating your shareable report card...");
+  const handleShare = async () => {
+    if (isGenerating) return;
 
-    // Create a beautiful report card
-    const cardContent = document.createElement('div');
-    cardContent.style.cssText = `
-      padding: 35px;
-      background: linear-gradient(145deg, #0f172a, #1e293b);
-      border-radius: 24px;
-      width: 580px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-      color: white;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-    `;
-    
-    // Get top 3 missing skills or use empty array
-    const topMissingSkills = improvements.critical_missing_skills?.slice(0, 3) || [];
-    const hasMissingSkills = topMissingSkills.length > 0;
-    
-    // Build enhanced report card
-    cardContent.innerHTML = `
-      <!-- Decorative Background Elements -->
-      <div style="position: absolute; top: -80px; right: -80px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(59, 130, 246, 0.15), transparent 70%); border-radius: 50%;"></div>
-      <div style="position: absolute; bottom: -100px; left: -100px; width: 350px; height: 350px; background: radial-gradient(circle, rgba(139, 92, 246, 0.12), transparent 70%); border-radius: 50%;"></div>
-      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; height: 400px; background: radial-gradient(circle, rgba(236, 72, 153, 0.05), transparent 70%); border-radius: 50%;"></div>
-      
-      <div style="position: relative; z-index: 1;">
-        <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px;">
+    try {
+      setIsGenerating(true);
+      toast.info("Building your LinkedIn post card...");
+
+      // ── Data prep ────────────────────────────────────────────────────
+      const breakdown   = atsScore.breakdown || {};
+      const maxMap      = { required_skills: 40, optional_skills: 20, education: 10, role_match: 10, experience_bonus: 10 };
+      const bdEntries   = Object.keys(breakdown)
+        .filter(k => k !== 'score' && k !== 'final_score')
+        .map(k => {
+          const item = breakdown[k];
+          const val  = typeof item === 'object' ? (item.score || 0) : (item || 0);
+          const max  = maxMap[k] || 20;
+          return { label: k.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()), val, max };
+        });
+
+      const matchedSkills = breakdown.required_skills?.matched || [];
+      const topRoles      = resumeData.top_roles || [];
+      const lift          = improvements.estimated_score_after_fix
+        ? (improvements.estimated_score_after_fix - finalScore).toFixed(1)
+        : null;
+      const degree = cleanedResume.education?.[0]?.degree || '';
+      const statusText = atsPassed ? 'PASSED ATS' : 'NEEDS IMPROVEMENT';
+      const statusColor = atsPassed ? '#22c55e' : '#f59e0b';
+      const statusBorder = atsPassed ? 'rgba(34,197,94,0.3)' : 'rgba(251,191,36,0.3)';
+      const statusBg    = atsPassed ? 'rgba(34,197,94,0.12)' : 'rgba(251,191,36,0.12)';
+
+      const barColor = (val, max) => {
+        const pct = (val / max) * 100;
+        return pct >= 80 ? '#22c55e' : pct >= 55 ? '#f59e0b' : '#ef4444';
+      };
+      const ringColor = finalScore >= 80 ? '#22c55e' : finalScore >= 60 ? '#f59e0b' : '#ef4444';
+
+      // ── Build 1200×630 card ──────────────────────────────────────────
+      const card = document.createElement('div');
+      card.style.cssText = `
+        position: fixed;
+        left: -9999px;
+        top: 0;
+        width: 1200px;
+        background: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+        border-radius: 0;
+        overflow: hidden;
+      `;
+
+      card.innerHTML = `
+        <!-- Top bar -->
+        <div style="background:#0f172a;padding:28px 48px 24px;display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <h1 style="font-size: 26px; margin: 0; background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; letter-spacing: -0.5px;">
-              ResumeIQ
-            </h1>
-            <p style="color: #94a3b8; font-size: 12px; margin: 2px 0 0 0; font-weight: 400;">AI-Powered Resume Analysis</p>
+            <div style="font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">ResumeIQ</div>
+            <div style="font-size:14px;color:#94a3b8;margin-top:3px;">AI-Powered Resume Analysis</div>
           </div>
-          <div style="background: ${atsPassed ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; padding: 6px 14px; border-radius: 100px; border: 1px solid ${atsPassed ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}; backdrop-filter: blur(10px);">
-            <span style="color: ${atsPassed ? '#4ade80' : '#f87171'}; font-weight: 700; font-size: 12px; letter-spacing: 0.3px;">
-              ${atsPassed ? '✅ PASSED' : '⚠️ NEEDS IMPROVEMENT'}
-            </span>
+          <div style="font-size:13px;font-weight:700;padding:7px 20px;border-radius:30px;background:${statusBg};color:${statusColor};border:1px solid ${statusBorder};letter-spacing:0.3px;">
+            ${statusText}
           </div>
         </div>
 
-        <!-- Main Score Section -->
-        <div style="display: flex; align-items: center; gap: 30px; margin: 25px 0 20px 0;">
-          <!-- Score Circle -->
-          <div style="flex-shrink: 0;">
-            <div style="width: 130px; height: 130px; border-radius: 50%; background: conic-gradient(from 0deg, ${getBarColor(finalScore)} 0% ${finalScore}%, rgba(255,255,255,0.08) ${finalScore}% 100%); display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 0 40px rgba(59, 130, 246, 0.2);">
-              <div style="width: 100px; height: 100px; border-radius: 50%; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.05);">
-                <span style="font-size: 34px; font-weight: 800; color: ${finalScore >= 80 ? '#4ade80' : finalScore >= 60 ? '#fbbf24' : '#f87171'}; letter-spacing: -1px;">
-                  ${finalScore.toFixed(1)}%
-                </span>
-                <span style="font-size: 10px; color: #94a3b8; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;">ATS Score</span>
-              </div>
-              <!-- Decorative ring dots -->
-              <div style="position: absolute; top: -4px; right: -4px; width: 12px; height: 12px; background: #3b82f6; border-radius: 50%; box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);"></div>
-              <div style="position: absolute; bottom: -4px; left: -4px; width: 8px; height: 8px; background: #8b5cf6; border-radius: 50%; box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);"></div>
-            </div>
-          </div>
-          
-          <!-- Info -->
-          <div style="flex: 1;">
-            <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 14px 16px; border: 1px solid rgba(255,255,255,0.05);">
-              <div style="margin-bottom: 10px;">
-                <p style="color: #94a3b8; font-size: 11px; margin: 0; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Current Level</p>
-                <p style="font-size: 16px; font-weight: 700; margin: 2px 0 0 0; color: #e2e8f0;">${resumeData.current_level || 'N/A'}</p>
-              </div>
-              <div>
-                <p style="color: #94a3b8; font-size: 11px; margin: 0; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Top Matches</p>
-                <p style="font-size: 13px; font-weight: 600; margin: 2px 0 0 0; color: #c7d2fe;">${resumeData.top_roles?.map(r => r.role).slice(0, 2).join(' • ') || 'N/A'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- Body -->
+        <div style="display:flex;padding:32px 48px 28px;gap:32px;min-height:490px;">
 
-        <!-- Score Breakdown -->
-        <div style="background: rgba(255,255,255,0.04); border-radius: 16px; padding: 16px 18px; margin: 18px 0; border: 1px solid rgba(255,255,255,0.06);">
-          <p style="color: #94a3b8; font-size: 11px; margin: 0 0 10px 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">📊 Score Breakdown</p>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            ${breakdownData.slice(0, 4).map(item => `
-              <div>
-                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
-                  <span style="color: #cbd5e1; font-weight: 500;">${item.name}</span>
-                  <span style="color: #94a3b8; font-weight: 600;">${item.value.toFixed(1)}/20</span>
+          <!-- Left column -->
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:24px;">
+
+            <!-- Candidate -->
+            <div>
+              <div style="font-size:26px;font-weight:700;color:#0f172a;letter-spacing:-0.3px;">
+                ${cleanedResume.personal_info?.name || ''}
+              </div>
+              <div style="font-size:13px;color:#64748b;margin-top:4px;">
+                ${cleanedResume.personal_info?.location || ''}${degree ? '  ·  ' + degree : ''}
+              </div>
+              <div style="display:inline-block;margin-top:10px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:600;padding:4px 14px;border-radius:30px;">
+                ${resumeData.current_level || ''}
+              </div>
+            </div>
+
+            <!-- Score breakdown bars -->
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:12px;">Score breakdown</div>
+              ${bdEntries.map(({ label, val, max }) => `
+                <div style="margin-bottom:11px;">
+                  <div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;margin-bottom:4px;">
+                    <span>${label}</span>
+                    <span style="font-weight:600;color:#0f172a;">${val.toFixed(1)} / ${max}</span>
+                  </div>
+                  <div style="height:6px;background:#f1f5f9;border-radius:4px;overflow:hidden;">
+                    <div style="width:${Math.min((val/max)*100,100)}%;height:100%;background:${barColor(val,max)};border-radius:4px;"></div>
+                  </div>
                 </div>
-                <div style="background: rgba(255,255,255,0.08); height: 4px; border-radius: 4px; overflow: hidden;">
-                  <div style="background: ${getBarColor(item.value)}; width: ${Math.min((item.value / 20) * 100, 100)}%; height: 100%; border-radius: 4px; transition: width 0.5s ease;"></div>
+              `).join('')}
+            </div>
+
+            <!-- Matched skills -->
+            ${matchedSkills.length ? `
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:10px;">Matched skills</div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px;">
+                  ${matchedSkills.map(s => `
+                    <span style="font-size:12px;font-weight:500;padding:4px 12px;border-radius:30px;background:#dcfce7;color:#166534;">${s}</span>
+                  `).join('')}
                 </div>
               </div>
-            `).join('')}
+            ` : ''}
           </div>
-        </div>
 
-        <!-- Missing Skills (if any) -->
-        ${hasMissingSkills ? `
-          <div style="background: rgba(239, 68, 68, 0.08); border-left: 3px solid #ef4444; padding: 12px 16px; border-radius: 10px; margin: 14px 0 18px 0; backdrop-filter: blur(10px);">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-              <span style="color: #f87171; font-size: 14px;">⚠️</span>
-              <p style="color: #fca5a5; font-size: 12px; margin: 0; font-weight: 600;">Skills to Develop</p>
-            </div>
-            <p style="font-size: 13px; color: #e2e8f0; margin: 4px 0 0 0; font-weight: 400; line-height: 1.5;">
-              ${topMissingSkills.map(item => item.skill).join(' • ')}
-              ${improvements.critical_missing_skills?.length > 3 ? ` • +${improvements.critical_missing_skills.length - 3} more` : ''}
-            </p>
-          </div>
-        ` : `
-          <div style="background: rgba(34, 197, 94, 0.08); border-left: 3px solid #4ade80; padding: 12px 16px; border-radius: 10px; margin: 14px 0 18px 0; backdrop-filter: blur(10px);">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="color: #4ade80; font-size: 14px;">🎉</span>
-              <p style="color: #86efac; font-size: 12px; margin: 0; font-weight: 600;">No critical missing skills! Great job! 🚀</p>
-            </div>
-          </div>
-        `}
+          <!-- Vertical divider -->
+          <div style="width:1px;background:#f1f5f9;flex-shrink:0;"></div>
 
-        <!-- Progress Bar Overview -->
-        <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 14px 16px; margin: 14px 0 18px 0; border: 1px solid rgba(255,255,255,0.05);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span style="color: #94a3b8; font-size: 11px; font-weight: 500;">Overall Score Progress</span>
-            <span style="color: #e2e8f0; font-size: 13px; font-weight: 700;">${finalScore.toFixed(1)}%</span>
-          </div>
-          <div style="background: rgba(255,255,255,0.08); height: 6px; border-radius: 4px; overflow: hidden;">
-            <div style="background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899); width: ${Math.min(finalScore, 100)}%; height: 100%; border-radius: 4px; transition: width 1s ease;"></div>
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-top: 4px;">
-            <span style="color: #64748b; font-size: 9px;">${atsPassed ? '✅ Ready for applications!' : '📈 Keep improving!'}</span>
-            <span style="color: #64748b; font-size: 9px;">${finalScore >= 80 ? '🌟 Excellent' : finalScore >= 60 ? '💪 Good' : '🔨 Needs work'}</span>
+          <!-- Right column -->
+          <div style="width:220px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:24px;padding-top:8px;">
+
+            <!-- Score ring (canvas drawn below via JS) -->
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.7px;text-align:center;margin-bottom:12px;">ATS Score</div>
+              <div style="position:relative;width:160px;height:160px;">
+                <canvas id="__iq_ring__" width="160" height="160"></canvas>
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+                  <div style="font-size:32px;font-weight:700;color:#0f172a;letter-spacing:-1px;">${finalScore.toFixed(1)}%</div>
+                  <div style="font-size:10px;color:#94a3b8;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;">out of 100</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Top role matches -->
+            ${topRoles.length ? `
+              <div style="width:100%;">
+                <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:10px;">Top role matches</div>
+                ${topRoles.map((r, i) => `
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;${i < topRoles.length - 1 ? 'border-bottom:0.5px solid #f1f5f9;' : ''}">
+                    <span style="font-size:13px;font-weight:500;color:#0f172a;">${r.role}</span>
+                    <span style="font-size:11px;color:#94a3b8;">${r.confidence}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
           </div>
         </div>
 
         <!-- Footer -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06);">
-          <div>
-            <p style="color: #64748b; font-size: 10px; margin: 0; letter-spacing: 0.3px;">Generated on ${new Date().toLocaleDateString()}</p>
-            <p style="color: #475569; font-size: 9px; margin: 2px 0 0 0;">ResumeIQ • AI-Powered Analysis</p>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 4px 12px 4px 8px; border-radius: 100px;">
-            <span style="color: #3b82f6; font-size: 14px;">⚡</span>
-            <span style="color: #94a3b8; font-size: 10px; font-weight: 500;">${finalScore >= 70 ? 'Top Candidate' : 'Improving'}</span>
-          </div>
+        <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:14px 48px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:12px;color:#94a3b8;">Generated via ResumeIQ  ·  resumeiq.app  ·  ${new Date().toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' })}</div>
+          ${lift ? `<div style="font-size:12px;font-weight:700;color:#16a34a;background:#dcfce7;padding:5px 16px;border-radius:30px;">+${lift}pts potential after fixes</div>` : ''}
         </div>
-      </div>
-    `;
+      `;
 
-    document.body.appendChild(cardContent);
-    
-    // Generate image with better quality
-    const canvas = await html2canvas(cardContent, {
-      scale: 2.5,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#0f172a',
-      width: 580,
-      height: cardContent.scrollHeight,
-      onclone: (clonedDoc) => {
-        // Ensure all elements render properly
-        const elements = clonedDoc.querySelectorAll('*');
-        elements.forEach(el => {
-          if (el.style) {
-            el.style.transform = 'none';
-          }
-        });
+      document.body.appendChild(card);
+
+      // ── Draw score ring via canvas ───────────────────────────────────
+      const ringCanvas = card.querySelector('#__iq_ring__');
+      if (ringCanvas) {
+        const ctx  = ringCanvas.getContext('2d');
+        const cx2  = 80, cy2 = 80, radius = 64, lw2 = 10;
+        const startA = -Math.PI / 2;
+        const endA   = startA + (finalScore / 100) * 2 * Math.PI;
+
+        // Track
+        ctx.beginPath();
+        ctx.arc(cx2, cy2, radius, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#f1f5f9';
+        ctx.lineWidth = lw2;
+        ctx.stroke();
+
+        // Fill arc
+        ctx.beginPath();
+        ctx.arc(cx2, cy2, radius, startA, endA);
+        ctx.strokeStyle = ringColor;
+        ctx.lineWidth = lw2;
+        ctx.lineCap = 'round';
+        ctx.stroke();
       }
-    });
-    
-    document.body.removeChild(cardContent);
-    
-    // Convert to high quality PNG
-    const imageDataUrl = canvas.toDataURL('image/png', 1.0);
-    
-    // ===== Option C: Native Share API (Mobile/Desktop) =====
-    if (navigator.share) {
-      try {
-        const response = await fetch(imageDataUrl);
-        const blob = await response.blob();
-        const file = new File(
-          [blob], 
-          `ResumeIQ_Score_${new Date().toISOString().split('T')[0]}.png`, 
-          { type: 'image/png' }
-        );
-        
-        await navigator.share({
-          title: 'My ResumeIQ Score',
-          text: `🎯 I scored ${finalScore.toFixed(1)}% on ResumeIQ! Check out my resume analysis:`,
-          files: [file],
-        });
-        toast.success("🎉 Shared successfully!");
-        setIsGenerating(false);
-        return;
-      } catch (shareError) {
-        if (shareError.name !== 'AbortError') {
-          console.error('Share error:', shareError);
-        } else {
-          // User cancelled share
-          setIsGenerating(false);
+
+      // ── Capture ──────────────────────────────────────────────────────
+      const canvas = await html2canvas(card, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        width: 1200,
+        height: card.scrollHeight,
+      });
+
+      document.body.removeChild(card);
+
+      const imageDataUrl = canvas.toDataURL('image/png', 1.0);
+
+      // ── Share / copy / download ──────────────────────────────────────
+      if (navigator.share) {
+        try {
+          const blob = await (await fetch(imageDataUrl)).blob();
+          const file = new File(
+            [blob],
+            `ResumeIQ_${(cleanedResume.personal_info?.name || 'Card').replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.png`,
+            { type: 'image/png' }
+          );
+          await navigator.share({
+            title: 'My ResumeIQ Resume Analysis',
+            text: `I scored ${finalScore.toFixed(1)}% on my resume analysis with ResumeIQ!`,
+            files: [file],
+          });
+          toast.success("Shared successfully!");
           return;
+        } catch (err) {
+          if (err.name === 'AbortError') return;
         }
       }
-    }
 
-    // ===== Option B: Copy to Clipboard (Desktop) =====
-    try {
-      const response = await fetch(imageDataUrl);
-      const blob = await response.blob();
-      
-      if (navigator.clipboard && navigator.clipboard.write) {
-        const item = new ClipboardItem({
-          [blob.type]: blob
-        });
-        await navigator.clipboard.write([item]);
-        toast.success("📋 Report card copied to clipboard! Paste it anywhere (Ctrl+V).", {
-          duration: 4000,
-        });
-      } else {
-        // Fallback: Download image
+      try {
+        const blob = await (await fetch(imageDataUrl)).blob();
+        if (navigator.clipboard?.write) {
+          await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+          toast.success("Card copied to clipboard — paste it directly into LinkedIn!", { duration: 5000 });
+        } else {
+          throw new Error('no clipboard api');
+        }
+      } catch {
         const link = document.createElement('a');
-        link.download = `ResumeIQ_Score_${new Date().toISOString().split('T')[0]}.png`;
+        link.download = `ResumeIQ_${(cleanedResume.personal_info?.name || 'Card').replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.png`;
         link.href = imageDataUrl;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        toast.success("📸 Report card downloaded! Share it with your network.");
+        toast.success("Card downloaded — ready to post on LinkedIn!");
       }
-    } catch (clipboardError) {
-      console.error('Clipboard error:', clipboardError);
-      // Final fallback: Download image
-      const link = document.createElement('a');
-      link.download = `ResumeIQ_Score_${new Date().toISOString().split('T')[0]}.png`;
-      link.href = imageDataUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("📸 Report card downloaded! Share it with your network.");
-    }
-    
-  } catch (error) {
-    console.error('Share error:', error);
-    toast.error("Failed to generate shareable card. Please try again.");
-  } finally {
-    setIsGenerating(false);
-  }
-};
 
+    } catch (err) {
+      console.error('Share error:', err);
+      toast.error("Failed to generate share card. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
   return (
     <motion.div
       initial={{ opacity: 0 }}
