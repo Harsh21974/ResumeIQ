@@ -37,7 +37,7 @@ const App = () => {
             <ScrollToTop />
             <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
               <Navbar />
-              <main className="flex-1 container mx-auto px-4 py-8">
+              <main className="flex-1">
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/upload" element={<Upload />} />
